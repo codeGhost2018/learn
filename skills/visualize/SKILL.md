@@ -1,13 +1,13 @@
 ---
 name: visualize
-description: "Add a correct, minimal visual to a lesson — a diagram or geometric picture — that renders inline in the Obsidian log. Use when an idea is genuinely clearer as a picture: a dependency graph, system/flow, sequence, state machine, tree, comparison, or a spatial/geometric thing (coordinate geometry, number line, vectors, a plot, a physical layout). Outsources authoring+rendering to a maker subagent that verifies the image by looking at it, then you embed the returned file."
+description: "Add a correct, minimal visual to a lesson when structure, relationships, or geometry are clearer as a picture. The default mermaid-maker returns Mermaid source for direct Markdown and Obsidian rendering, with no rendering tools or dependency installation. The optional svg-maker produces a verified PNG only when its existing tools are available."
 ---
 
 # Visualize
 
-A picture earns its place only when it shows something words can't — shape, structure, direction, relationship, geometry. This skill produces ONE such picture, guarantees it is **correct** (the maker renders it and looks at it before returning), and drops it into the lesson so it renders inline in the Obsidian `md-log` file.
+A picture earns its place only when it shows something words can't — shape, structure, direction, relationship, geometry. This skill produces ONE such visual and embeds it in the lesson's Markdown.
 
-You are the **creative director**. You decide the exact idea and distill it to its fewest carrying elements. A **maker subagent** does the authoring, rendering, visual verification, and saving, then returns a filename. You embed that filename in your reply.
+You are the **creative director**. You decide the exact idea and distill it to its fewest carrying elements. For structural visuals, a **maker subagent** reviews the relationships and syntax, then returns Mermaid source that you embed directly. The Markdown viewer performs rendering; source review does not guarantee the final layout. The optional SVG path renders and visually verifies a PNG when its tools are already available.
 
 ## When to visualize (and when not to)
 
@@ -22,8 +22,8 @@ Do NOT visualize when prose or a single equation already carries it. A decorativ
 
 Two makers, discovered from `.pi/agents/`:
 
-- **`mermaid-maker`** — structural/relational visuals: dependency graphs, flowcharts, sequence/state/ER/class diagrams, trees, mindmaps, timelines. This is the default and fits the dependency-graph pedagogy directly.
-- **`svg-maker`** — spatial/geometric visuals Mermaid can't lay out: exact coordinates, geometry figures, number lines, vectors, plots, custom shapes.
+- **`mermaid-maker`** — structural/relational visuals: dependency graphs, flowcharts, sequence/state/ER/class diagrams, trees, mindmaps, timelines. This is the default. It returns a fenced `mermaid` code block and needs no custom extension tools or installed renderers.
+- **`svg-maker`** — spatial/geometric visuals Mermaid can't lay out: exact coordinates, geometry figures, number lines, vectors, plots, custom shapes. This optional path needs its existing authoring and rendering tools. If they are unavailable, explain the geometry in prose or equations; do not install tools or force inaccurate geometry into Mermaid.
 
 Rule of thumb: if it's *nodes-and-edges / relationships*, use mermaid-maker. If it's *positions-and-shapes / geometry*, use svg-maker.
 
@@ -38,41 +38,55 @@ Give the maker the concept AND the concrete elements you want — not a vague to
 
 Keep the idea intact but trust the maker to compose; if your brief lists more than ~5–7 elements, cut it first.
 
-## Invoke
+## Invoke with pi-subagents
 
-Dispatch the maker with the `subagent` tool:
+`pi-subagents` discovers the maker definitions in `.pi/agents/`; no custom tool-registration hook is needed for Mermaid. Confirm the selected agent is executable with `subagent({ action: "list", capabilities: true })`, then dispatch it:
 
-```
-subagent(agent="mermaid-maker", task="<your minimal, concrete brief>")
-```
-```
-subagent(agent="svg-maker", task="<your minimal, concrete brief>")
+```json
+{
+  "agent": "mermaid-maker",
+  "task": "<your minimal, concrete brief; request one fenced mermaid code block>",
+  "async": true
+}
 ```
 
-The maker owns its own purpose-built tools (`write_*`/`edit_*`/`render_*`) — it authors the source, renders it to a PNG, **looks at the PNG and iterates until it is correct and clean**, publishes it into the vault with a unique filename, and returns:
+Background runs notify the parent when complete. Continue independent work or yield while the maker runs; embed the diagram only after receiving its result. Do not poll or launch a duplicate maker to wait for it.
 
-```
+On success, `mermaid-maker` returns exactly one fenced `mermaid` code block. It reviews source and relationships; it does not create a PNG, save files, or use `write_mermaid`, `edit_mermaid`, or `render_mermaid`. Do not install renderers or other dependencies for this path.
+
+For optional SVG work, dispatch `svg-maker` only when its authoring and rendering tools are available. It renders a PNG, looks at it, iterates, and publishes it with this result:
+
+```text
 RESULT:
 filename: viz-<slug>-<timestamp>.png
 path: <cwd>/viz/viz-<slug>-<timestamp>.png
 ```
 
-If it returns `RESULT: NONE`, it couldn't make a correct picture of the brief — simplify or rethink, or decide the visual isn't worth it. Never hand-author or fake a diagram yourself; correctness depends on the maker's render-and-inspect loop.
+If either maker returns `RESULT: NONE`, simplify or rethink the brief, or explain without a visual. A missing-tool or launch error is an infrastructure failure, not proof that the idea cannot be visualized. Report it explicitly. Do not fabricate code, filenames, or verified images to stand in for a failed maker.
 
 ## Embed it in the lesson
 
-Put the embed directly in your teaching reply, using Obsidian's wikilink embed with the returned **filename** (not the full path) and a display width:
+For **Mermaid**, copy the returned fenced code block directly into the teaching reply, without a surrounding code fence, indentation, `RESULT:` wrapper, or wikilink. For example:
 
+```mermaid
+flowchart TD
+    A["数据包"] --> B["排序"]
+    A --> C["丢失后重传"]
+    B --> D["可靠字节流"]
+    C --> D
 ```
+
+The `md-log` extension mirrors the reply into the linked `.md` file. Obsidian and other Mermaid-enabled Markdown viewers render the code block inline. Introduce the diagram in a sentence, then let it carry the idea. Do not claim it was rendered or visually verified by the maker.
+
+For **SVG PNGs**, use the returned filename with an Obsidian embed:
+
+```text
 ![[viz-<slug>-<timestamp>.png|500]]
 ```
 
-That's all. The `md-log` extension mirrors your reply text verbatim into the linked `.md`, and Obsidian resolves the embed by filename anywhere in the vault (the maker saves into the project's `viz` folder, which is inside the vault) — so it renders inline in the lesson automatically. Width `|500` is a good default; use larger for dense diagrams. Introduce the visual in a sentence, then let it carry the idea — don't narrate every element back in prose.
+Obsidian resolves the unique filename inside the vault's `viz` folder. Use larger display widths only when needed.
 
-## Why this is reliable
+## Verification boundary
 
-- The maker never returns a picture it hasn't **looked at**, so "renders fine but says something false" is caught before it reaches the learner.
-- PNG embed means **what the maker verified is pixel-identical to what the learner sees** — no re-render drift.
-- Unique filenames keep Obsidian's by-filename embed resolution unambiguous.
-
-> The makers render through the project's `visual-tools` extension (Mermaid via a bundled `@mermaid-js/mermaid-cli` + installed Chrome; SVG via `rsvg-convert`, fallback ImageMagick). You don't render anything yourself — you only brief the maker and embed the filename it returns.
+- Mermaid: the maker checks source syntax and meaning by review. The viewer owns parsing and layout. If the viewer reports an error, send the exact error and source back to the maker for correction.
+- SVG: the maker's existing render-and-inspect loop verifies the published PNG. This path still depends on the SVG tools and an installed renderer.

@@ -13,7 +13,7 @@ This is a personal system I built for myself, shared as-is. Built as a pi config
 - `extensions/ask-user-question/` — the agent asks you questions through a UI popup
 - `extensions/quiz/` — graded questions with instant feedback (✓/✗, correct answer, explanation)
 - `extensions/md-log/` — link a markdown file to the session
-- `extensions/visual-tools/` — tools for visualization subagents
+- `extensions/visual-tools/` — legacy PNG tools for visualization subagents; the source-only `mermaid-maker` does not use them
 - `agents/` — `researcher`, `svg-maker`, `mermaid-maker`: the subagents the system delegates to
 
 ## Install
@@ -29,7 +29,8 @@ Then open pi in that directory. (Or copy the pieces you want into your existing 
 ## Requirements
 
 - [pi](https://github.com/earendil-works/pi)
-- A subagent implementation, so the system can spawn the researcher and the visual makers. Recommended: [pi-interactive-subagents](https://github.com/amosblomqvist/pi-interactive-subagents) (tmux only). With it, everything works out of the box. Any other implementation works too, but expect to adapt the agent definitions, e.g. `agents/researcher.md` lists `safe_bash` in its tools, which is specific to that extension.
+- A subagent implementation, so the system can spawn the researcher and the visual makers. The `mermaid-maker` is configured for [pi-subagents](https://www.npmjs.com/package/pi-subagents), which discovers it from `agents/` and returns Mermaid source directly. Other agents may need adaptation: `agents/researcher.md` still lists tools from pi-interactive-subagents, and `svg-maker` still requires its PNG tools and renderer.
+- A Mermaid-enabled Markdown viewer, such as Obsidian, for inline diagrams. The Mermaid path requires no renderer installation or PNG generation.
 - `ask-user-question` — use the copy bundled here. If your setup already has an `ask-user-question` extension, use **this** one in its place. Popups from different extensions serialize through a shared UI lock, which only works when it's the same implementation.
 
 ## Notes
