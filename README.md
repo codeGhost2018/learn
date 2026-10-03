@@ -39,12 +39,12 @@ You can run the system without subagents. The main session does the teaching. Yo
 
 The teaching skill is written for one learner (me). Edit the skill to fit how you learn best.
 
-## Fork changes by tim.zl
+## 本 Fork 的修改说明
 
-This fork includes the following changes authored by **tim.zl**:
+以下修改由 **tim.zl** 完成：
 
-- Adapted `mermaid-maker` to use the standard agent configuration supported by `pi-subagents`, which discovers the agent from `.pi/agents/` without the legacy `pi-interactive-subagents` tool-registration hook.
-- Changed Mermaid output to a single fenced `mermaid` code block for direct embedding and rendering in Obsidian or other Mermaid-enabled Markdown viewers. No additional renderer, CLI, or dependency installation is required for this path.
-- Updated the `visualize` skill to embed Mermaid source directly in lesson Markdown. The maker reviews the source and relationships; the Markdown viewer handles rendering and layout.
+- 将 `mermaid-maker` 适配为 `pi-subagents` 支持的标准代理配置，由插件自动发现 `.pi/agents/` 中的代理，无需使用旧版 `pi-interactive-subagents` 的工具注册接口。
+- 将 Mermaid 输出改为单个 `mermaid` 代码块，可直接嵌入 Markdown，由 Obsidian 或其他支持 Mermaid 的阅读器渲染。此流程无需额外安装渲染器、命令行工具或依赖，也无需生成 PNG。
+- 同步更新 `visualize` skill，使其将 Mermaid 源码直接嵌入课程 Markdown。代理负责检查源码和图中关系，Markdown 阅读器负责渲染与布局。
 
-The Mermaid source output was verified with an actual `pi-subagents` call. The SVG maker retains its existing PNG workflow and still requires its authoring tools and renderer.
+已通过实际调用 `pi-subagents` 验证 Mermaid 源码输出。SVG 代理保留原有的 PNG 生成流程，仍需相应的绘图工具和渲染器。
