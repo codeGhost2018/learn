@@ -1,92 +1,131 @@
 ---
 name: visualize
-description: "Add a correct, minimal visual to a lesson when structure, relationships, or geometry are clearer as a picture. The default mermaid-maker returns Mermaid source for direct Markdown and Obsidian rendering, with no rendering tools or dependency installation. The optional svg-maker produces a verified PNG only when its existing tools are available."
+description: "Choose and embed one useful visual for a lesson. Route simple relationships to Mermaid, precise geometry to SVG, and complex spatial or visually narrative scenes to an image-generation agent."
 ---
 
 # Visualize
 
-A picture earns its place only when it shows something words can't — shape, structure, direction, relationship, geometry. This skill produces ONE such visual and embeds it in the lesson's Markdown.
+A visual earns its place when it makes something easier to understand than words alone: a relationship, a precise shape, a spatial model, or a visual metaphor. Produce ONE visual with ONE teaching goal. Do not add decoration that merely repeats the prose.
 
-You are the **creative director**. You decide the exact idea and distill it to its fewest carrying elements. For structural visuals, a **maker subagent** reviews the relationships and syntax, then returns Mermaid source that you embed directly. The Markdown viewer performs rendering; source review does not guarantee the final layout. The optional SVG path renders and visually verifies a PNG when its tools are already available.
+The teaching plan's dependency map remains Mermaid because it expresses the logic of what depends on what. This skill adds optional visual support for a particular concept; an image-maker visual does not replace the teaching DAG.
 
-## When to visualize (and when not to)
+## Choose the medium
 
-This teaching system builds a **dependency graph in the learner's head** — axioms at the root, derived facts hanging off them. A visual is powerful exactly when it makes that structure (or a geometry) visible. Reach for one when:
+Route by the kind of truth the learner must read from the result:
 
-- The idea is a **structure or relationship**: dependencies, a system with parts and arrows, a flow/pipeline, a sequence of exchanges, a state machine, a tree/hierarchy, a comparison, a containment (what's inside vs outside).
-- The idea is **spatial or geometric**: coordinate geometry, a number line, vectors, a function's shape, a physical arrangement.
+### `mermaid-maker`: relationships
 
-Do NOT visualize when prose or a single equation already carries it. A decorative diagram that just restates the sentence next to it adds noise and a chance to be wrong. When in doubt, don't — a missing visual is cheaper than a false one.
+Use for small, explicit structures where the connections are the content:
 
-## Choose the maker
+- dependency graphs and teaching DAGs;
+- short flows and pipelines;
+- state machines and sequences;
+- trees, hierarchies, ER diagrams, and simple timelines.
 
-Two makers, discovered from `.pi/agents/`:
+Use Mermaid when the reader must accurately follow nodes and edges. Keep the graph small, usually 5–7 nodes. It returns Mermaid source for direct Markdown embedding and does not generate a PNG.
 
-- **`mermaid-maker`** — structural/relational visuals: dependency graphs, flowcharts, sequence/state/ER/class diagrams, trees, mindmaps, timelines. This is the default. It returns a fenced `mermaid` code block and needs no custom extension tools or installed renderers.
-- **`svg-maker`** — spatial/geometric visuals Mermaid can't lay out: exact coordinates, geometry figures, number lines, vectors, plots, custom shapes. This optional path needs its existing authoring and rendering tools. If they are unavailable, explain the geometry in prose or equations; do not install tools or force inaccurate geometry into Mermaid.
+### `svg-maker`: precise positions
 
-Rule of thumb: if it's *nodes-and-edges / relationships*, use mermaid-maker. If it's *positions-and-shapes / geometry*, use svg-maker.
+Use for figures where coordinates, proportions, angles, formulas, values, or exact geometry are the content:
 
-## Brief the maker well: one idea, fewest elements
+- coordinate geometry and number lines;
+- vectors and function plots;
+- simple physical layouts;
+- memory maps or other precise spatial diagrams.
 
-The most common failure is **cramming** — every extra label makes the picture harder to read AND harder to lay out correctly. Before briefing, prune to the fewest elements that carry the idea, and for each ask: *"if I delete this, is the idea still clear?"* If yes, delete it.
+It hand-authors SVG, renders a preview, looks at it, iterates, and publishes a verified PNG. It requires its existing SVG tools and a local renderer.
 
-Give the maker the concept AND the concrete elements you want — not a vague topic, and not a long checklist.
+### `image-maker`: complex scenes
 
-- BAD: "make a diagram about how TCP works"
-- GOOD: "graph TD: a node 'packet' at the top; arrows down to 'ordering' and 'retransmit on loss'; both arrows down into 'reliable stream'. No title. Show that reliability is built FROM packets, not alongside them."
+Use when the learner needs an overall spatial or visual model and a small code diagram would become crowded or mechanically flat:
 
-Keep the idea intact but trust the maker to compose; if your brief lists more than ~5–7 elements, cut it first.
+- large systems with many objects and layers;
+- multi-stage real-world or technical scenes;
+- cutaways, 3D structures, and visual metaphors;
+- browser/network/cloud/computer overviews;
+- concepts such as caching, recursion, concurrency, virtual memory, or garbage collection when spatial intuition is the goal.
 
-## Invoke with pi-subagents
+Use it when at least two of these are true: many objects, multiple spatial layers, a large scene, a need for material/environment/scale, or a visual narrative that cannot be expressed naturally by nodes and edges. The image model may express the scene freely, but the brief must identify the required objects and relations.
 
-`pi-subagents` discovers the maker definitions in `.pi/agents/`; no custom tool-registration hook is needed for Mermaid. Confirm the selected agent is executable with `subagent({ action: "list", capabilities: true })`, then dispatch it:
+Do not use it for exact formulas, dense labels, data tables, byte layouts, or diagrams where every arrow and number must be authoritative. Those belong to Mermaid or SVG.
+
+## Routing rules
+
+```text
+Is the main information who connects to whom?
+  yes -> mermaid-maker
+
+Is the main information exact position, scale, angle, value, or formula?
+  yes -> svg-maker
+
+Is the main information a large spatial scene, layered system, or visual metaphor?
+  yes -> image-maker
+
+Otherwise:
+  do not force a visual; use prose or split the concept into smaller visuals.
+```
+
+If a concept has both a complex scene and a few exact annotations, start with `image-maker` only when the scene itself is the teaching goal. Keep annotations short. Do not introduce a separate hybrid agent in this version; add a later annotated mode only if real lessons repeatedly require programmatic labels over generated scenes.
+
+### `image-maker` preflight
+
+The image route is conditional. Before dispatching it, verify that the `pixeltamer` skill is actually available in the current Pi environment and readable. A file such as `.pi/agents/image-maker.md` does not provide image generation by itself.
+
+The skill owns backend selection, `.env` loading, third-party `OPENAI_IMAGE_BASE_URL` support, and authentication. Do not use `pixeltamer doctor` as a hard gate: it may inspect only exported environment variables and miss credentials loaded from the skill's documented `.env` files. After confirming the skill exists, run the real generation command with `--json`; its structured `ok` result is the actual backend/request check. If that call fails, report the error and route to Mermaid, SVG, or prose.
+
+Typical skill locations are environment-specific, for example:
+
+```text
+$PI_AGENT_HOME/skills/pixeltamer/SKILL.md
+$HOME/.pi/agent/skills/pixeltamer/SKILL.md
+$HOME/.claude/skills/pixeltamer/SKILL.md
+```
+
+Use the path provided by the current environment. Do not assume that a skill available in one Pi installation is available in another.
+
+## Briefing any maker
+
+Before dispatching, write a compact brief with:
+
+- one teaching goal;
+- what the learner should notice;
+- required objects or elements;
+- required relations or spatial order;
+- what must not be invented;
+- language and output format.
+
+For Mermaid/SVG, specify exact relations, values, and geometry. For image-maker, specify the scene, viewpoint, spatial relations, style, aspect ratio, and whether text should be absent or minimal. Do not ask an image model to render dense code, formulas, tables, or exact numeric diagrams.
+
+## Dispatch
+
+`pi-subagents` discovers agents from `.pi/agents/`. Confirm the selected agent is executable with `subagent({ action: "list", capabilities: true })`. For `image-maker`, complete the `pixeltamer` skill existence check above first; capability discovery alone is not proof that image generation is available. The real generation call with `--json` is the backend check.
+
+Then dispatch the appropriate maker:
 
 ```json
 {
-  "agent": "mermaid-maker",
-  "task": "<your minimal, concrete brief; request one fenced mermaid code block>",
+  "agent": "<mermaid-maker|svg-maker|image-maker>",
+  "task": "<the concrete brief and the maker's output contract>",
   "async": true
 }
 ```
 
-Background runs notify the parent when complete. Continue independent work or yield while the maker runs; embed the diagram only after receiving its result. Do not poll or launch a duplicate maker to wait for it.
+Do not launch a duplicate maker while a background run is active. On infrastructure failure, report the failure explicitly; do not fabricate a diagram, image, or path.
 
-On success, `mermaid-maker` returns exactly one fenced `mermaid` code block. It reviews source and relationships; it does not create a PNG, save files, or use `write_mermaid`, `edit_mermaid`, or `render_mermaid`. Do not install renderers or other dependencies for this path.
+## Embed the result
 
-For optional SVG work, dispatch `svg-maker` only when its authoring and rendering tools are available. It renders a PNG, looks at it, iterates, and publishes it with this result:
+For Mermaid, copy the single returned fenced `mermaid` block directly into the lesson. Do not add an outer fence or claim that the maker rendered it.
 
-```text
-RESULT:
-filename: viz-<slug>-<timestamp>.png
-path: <cwd>/viz/viz-<slug>-<timestamp>.png
-```
-
-If either maker returns `RESULT: NONE`, simplify or rethink the brief, or explain without a visual. A missing-tool or launch error is an infrastructure failure, not proof that the idea cannot be visualized. Report it explicitly. Do not fabricate code, filenames, or verified images to stand in for a failed maker.
-
-## Embed it in the lesson
-
-For **Mermaid**, copy the returned fenced code block directly into the teaching reply, without a surrounding code fence, indentation, `RESULT:` wrapper, or wikilink. For example:
-
-```mermaid
-flowchart TD
-    A["数据包"] --> B["排序"]
-    A --> C["丢失后重传"]
-    B --> D["可靠字节流"]
-    C --> D
-```
-
-The `md-log` extension mirrors the reply into the linked `.md` file. Obsidian and other Mermaid-enabled Markdown viewers render the code block inline. Introduce the diagram in a sentence, then let it carry the idea. Do not claim it was rendered or visually verified by the maker.
-
-For **SVG PNGs**, use the returned filename with an Obsidian embed:
+For SVG and image PNGs, use the returned filename with an Obsidian embed:
 
 ```text
-![[viz-<slug>-<timestamp>.png|500]]
+![[viz-<slug>-<timestamp>.png|700]]
 ```
 
-Obsidian resolves the unique filename inside the vault's `viz` folder. Use larger display widths only when needed.
+The PNG must exist in the vault's `viz/` directory. Use a smaller width for a compact figure and a larger width for a wide system scene.
 
 ## Verification boundary
 
-- Mermaid: the maker checks source syntax and meaning by review. The viewer owns parsing and layout. If the viewer reports an error, send the exact error and source back to the maker for correction.
-- SVG: the maker's existing render-and-inspect loop verifies the published PNG. This path still depends on the SVG tools and an installed renderer.
+- Mermaid: the maker reviews source syntax and relationships; the Markdown viewer owns rendering and layout.
+- SVG: the maker must render and inspect the PNG before publishing.
+- Image: the maker must inspect the generated PNG against the brief before publishing. A successful model/API call is not visual verification.
