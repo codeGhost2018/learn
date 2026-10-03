@@ -38,3 +38,13 @@ Then open pi in that directory. (Or copy the pieces you want into your existing 
 You can run the system without subagents. The main session does the teaching. You just lose the researcher (truth verification) and the generated visuals.
 
 The teaching skill is written for one learner (me). Edit the skill to fit how you learn best.
+
+## Fork changes by tim.zl
+
+This fork includes the following changes authored by **tim.zl**:
+
+- Adapted `mermaid-maker` to use the standard agent configuration supported by `pi-subagents`, which discovers the agent from `.pi/agents/` without the legacy `pi-interactive-subagents` tool-registration hook.
+- Changed Mermaid output to a single fenced `mermaid` code block for direct embedding and rendering in Obsidian or other Mermaid-enabled Markdown viewers. No additional renderer, CLI, or dependency installation is required for this path.
+- Updated the `visualize` skill to embed Mermaid source directly in lesson Markdown. The maker reviews the source and relationships; the Markdown viewer handles rendering and layout.
+
+The Mermaid source output was verified with an actual `pi-subagents` call. The SVG maker retains its existing PNG workflow and still requires its authoring tools and renderer.
