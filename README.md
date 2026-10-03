@@ -2,19 +2,31 @@
 
 [![video](assets/thumbnail.png)](https://www.youtube.com/watch?v=kzcI5F4tGiU)
 
-My AI learning system from this video: [How I Use AI to Learn Things](https://www.youtube.com/watch?v=kzcI5F4tGiU).
-
-This is a personal system I built for myself, shared as-is. Built as a pi configuration: the teaching philosophy encoded in a skill, a few small extensions, and agent definitions.
+A personal AI learning system built as a Pi configuration. It combines a teaching philosophy, a few small extensions, and specialized agents for research and visual explanations.
 
 ## What's in it
 
-- `skills/teach/` — the philosophy and the process
-- `skills/visualize/` — routes visual work to Mermaid, SVG, or image generation based on the teaching need
-- `extensions/ask-user-question/` — the agent asks you questions through a UI popup
-- `extensions/quiz/` — graded questions with instant feedback (✓/✗, correct answer, explanation)
-- `extensions/md-log/` — link a markdown file to the session
-- `extensions/visual-tools/` — legacy PNG tools for visualization subagents; the source-only `mermaid-maker` does not use them
-- `agents/` — `researcher`, `svg-maker`, `mermaid-maker`, and the optional `image-maker` visual agents
+- `skills/teach/` — the teaching philosophy and learning process
+- `skills/visualize/` — chooses the right visual medium for a lesson
+- `extensions/ask-user-question/` — asks open-ended questions through a UI popup
+- `extensions/quiz/` — presents graded questions with instant feedback
+- `extensions/md-log/` — mirrors a session into a linked Markdown file
+- `extensions/visual-tools/` — legacy Mermaid/SVG PNG tools for older subagent setups
+- `agents/researcher.md` — web research agent
+- `agents/mermaid-maker.md` — Mermaid source agent for small relationship diagrams
+- `agents/svg-maker.md` — precise SVG and PNG agent for geometry and spatial diagrams
+- `agents/image-maker.md` — conditional image-generation agent for complex spatial scenes
+- [`change.md`](change.md) — dated change log
+
+## Visual routing
+
+The `visualize` skill uses three complementary routes:
+
+- `mermaid-maker` for dependency graphs, short flows, state machines, trees, and other small relationship structures. It returns Mermaid source for direct Markdown or Obsidian rendering.
+- `svg-maker` for exact coordinates, proportions, angles, formulas, values, and other deterministic geometry. It renders and verifies a PNG in `viz/`.
+- `image-maker` for large systems, layered scenes, visual metaphors, cutaways, and spatial explanations that would become crowded or mechanically flat as code diagrams.
+
+The teaching dependency map remains Mermaid because its arrows express the logic of what depends on what. An image-generated scene is supporting intuition, not a replacement for the knowledge DAG or for exact formulas and data.
 
 ## Install
 
@@ -24,27 +36,32 @@ This repo **is** a `.pi` directory. From your learning project's root:
 git clone https://github.com/amosblomqvist/learn .pi
 ```
 
-Then open pi in that directory. (Or copy the pieces you want into your existing project config.)
+Then open Pi in that directory. You can also copy the pieces you need into an existing project configuration.
 
 ## Requirements
 
-- [pi](https://github.com/earendil-works/pi)
-- A subagent implementation, so the system can spawn the researcher and visual makers. The `mermaid-maker` is discovered from `agents/` and returns Mermaid source directly. `svg-maker` requires its PNG tools and renderer. `image-maker` is conditional: it may be dispatched only when the `pixeltamer` skill is installed and readable in the current Pi environment; the actual generation command with `--json` is used to verify the configured backend.
-- A Mermaid-enabled Markdown viewer, such as Obsidian, for inline diagrams. The Mermaid path requires no renderer installation or PNG generation.
-- `pixeltamer` skill for model-generated teaching scenes. Typical locations are `$PI_AGENT_HOME/skills/pixeltamer/SKILL.md`, `$HOME/.pi/agent/skills/pixeltamer/SKILL.md`, or an equivalent environment-specific skill path. The skill owns `.env` loading and third-party base URL configuration. Do not use `pixeltamer doctor` as a hard gate; run the actual generation command with `--json` and use its structured result to detect backend availability. If generation fails, route to Mermaid, SVG, or prose instead.
-- `ask-user-question` — use the copy bundled here. If your setup already has an `ask-user-question` extension, use **this** one in its place. Popups from different extensions serialize through a shared UI lock, which only works when it's the same implementation.
+- [Pi](https://github.com/earendil-works/pi)
+- A subagent implementation that discovers agents from `agents/`
+- A Mermaid-enabled Markdown viewer, such as Obsidian, for inline Mermaid diagrams
+- The existing SVG tools and a local renderer for `svg-maker`
+- The `pixeltamer` skill for `image-maker`, installed and readable in the current Pi environment
+
+`image-maker` is conditional. The agent first checks that the `pixeltamer` skill exists, then invokes the skill's documented generation command with `--json`. The generation result, not `pixeltamer doctor`, determines whether the configured backend is usable. This matters because Pixeltamer can load credentials and third-party API settings from its own `.env` files, which may not be visible to a separate diagnostic check.
+
+The skill's common configuration location is:
+
+```text
+$HOME/.config/pixeltamer/.env
+```
+
+Do not commit that file or expose its contents.
 
 ## Notes
 
-You can run the system without subagents. The main session does the teaching. You just lose the researcher (truth verification) and the generated visuals.
+The system can run without subagents; the main session can still teach directly. Without the visual agents, it loses the generated visual workflows. Without the `pixeltamer` skill or a working image backend, `image-maker` must not be used; route the visual to Mermaid, SVG, or prose instead.
 
-The teaching skill is written for one learner (me). Edit the skill to fit how you learn best.
+The teaching skill is written for one learner. Adapt it if your learning goals or interaction style differ.
 
-## 本 Fork 的修改说明
+## Change Log
 
-以下修改由 **tim.zl** 完成：
-
-- 将 `visualize` 扩展为三路视觉路由：`mermaid-maker` 负责关系结构，`svg-maker` 负责精确几何，`image-maker` 负责复杂空间场景和视觉隐喻。
-- 新增 `image-maker`，但它是条件能力：只有检测到当前 Pi 环境中的 `pixeltamer` skill 且实际生成命令返回 `--json` 成功结果时才允许发布图片。skill 自己负责加载 `.env`、第三方 base URL 和 backend 配置。
-- 图片生成结果必须查看并验证后才能发布到 `viz/`；图片模型不可替代教学依赖 DAG、精确公式、数据表格或坐标图。
-- 暂不引入独立的 `hybrid-visual-maker`，后续只有在真实课程反复需要精确标注叠加时再增加 annotated mode。
+See [`change.md`](change.md) for dated implementation changes, test results, and known limitations.
