@@ -25,28 +25,33 @@ Do not use it for a small dependency graph, a precise coordinate/geometry figure
 
 ## Required preflight
 
-There are two separate prerequisites, and both must pass before this agent is used:
+The image route is available when the `pixeltamer` skill exists and one of these configuration signals is present:
 
-1. The `pixeltamer` skill must exist and be readable in the current Pi environment. Read its `SKILL.md` before generation and follow its backend, prompt, output, and verification instructions. A project-level agent definition alone is not enough.
-2. The backend selected by that skill must be available. Run the skill's documented doctor/check command, normally `pixeltamer doctor`, before the first generation.
+- `pixeltamer doctor` reports a usable API or Codex backend; or
+- a readable Pixeltamer configuration file exists, such as `$HOME/.config/pixeltamer/.env`, and contains at least one supported Pixeltamer setting such as `OPENAI_IMAGE_API_KEY`, `OPENAI_API_KEY`, `OPENAI_IMAGE_BASE_URL`, or `PIXELTAMER_BACKEND`.
 
-If the skill is missing, unreadable, or reports no usable backend, return an infrastructure failure and let the caller route to Mermaid, SVG, or prose. Do not fall back to an unverified command, do not fabricate an image or filename, and do not claim that the model is available merely because this agent file exists.
+The second condition is important for third-party image providers: the dispatcher or the current Agent process may not expose the `.env` values as exported environment variables, so `doctor` can report false negatives. Do not reject the image route solely because `doctor` reports no key when the documented configuration file is present. The actual generation command with `--json` remains the final check: `ok: true` confirms availability; `ok: false` must be reported without fabricating an image or filename.
 
-Typical skill locations include:
+The `pixeltamer` skill must be readable before generation. Read its `SKILL.md` and follow its backend, prompt, output, and verification instructions. A project-level Agent definition alone is not enough.
+
+Typical skill and configuration locations include:
 
 ```text
 $PI_AGENT_HOME/skills/pixeltamer/SKILL.md
 $HOME/.pi/agent/skills/pixeltamer/SKILL.md
 $HOME/.claude/skills/pixeltamer/SKILL.md
+$HOME/.config/pixeltamer/.env
 ```
 
-Use the location actually provided by the current environment. Do not assume that a globally documented skill is installed in every project.
+Do not read, print, or expose secret values. Check only file readability and supported variable names.
+
+If neither the doctor signal nor the configuration-file signal is present, return an infrastructure failure and let the caller route to Mermaid, SVG, or prose.
 
 ## Required workflow
 
 1. Reduce the brief to ONE visual teaching goal. Keep the must-have objects and relations; ignore decorative additions.
 2. Complete the preflight above before attempting generation.
-3. Read the `pixeltamer` skill's relevant references and follow its supported generation workflow. Do not duplicate backend or authentication logic in this agent.
+3. Read the `pixeltamer` skill's relevant references and follow its supported generation workflow. Do not duplicate backend or authentication logic in this Agent.
 4. Build a prompt from the brief with these sections: intent, scene, subjects, spatial relations, viewpoint/composition, style, text constraints, and output constraints.
 5. Prefer no text or only a few short labels inside the generated image. Do not ask the model to render code, equations, tables, byte counts, or dense annotations.
 6. Generate a PNG in the project's `viz/` directory using a unique `viz-<slug>-<timestamp>.png` filename. Use a wide format such as 1536x1024 for lesson scenes unless the brief requires another ratio.

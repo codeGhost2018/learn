@@ -69,9 +69,12 @@ If a concept has both a complex scene and a few exact annotations, start with `i
 
 ### `image-maker` preflight
 
-The image route is conditional. Before dispatching it, verify that the `pixeltamer` skill is actually available in the current Pi environment and readable. A file such as `.pi/agents/image-maker.md` does not provide image generation by itself.
+The image route is conditional. Before dispatching it, verify that the `pixeltamer` skill is readable and that at least one configuration signal exists:
 
-The skill owns backend selection, `.env` loading, third-party `OPENAI_IMAGE_BASE_URL` support, and authentication. Do not use `pixeltamer doctor` as a hard gate: it may inspect only exported environment variables and miss credentials loaded from the skill's documented `.env` files. After confirming the skill exists, run the real generation command with `--json`; its structured `ok` result is the actual backend/request check. If that call fails, report the error and route to Mermaid, SVG, or prose.
+- `pixeltamer doctor` reports a usable API or Codex backend; or
+- a readable Pixeltamer config file exists, typically `$HOME/.config/pixeltamer/.env`, with at least one supported setting such as `OPENAI_IMAGE_API_KEY`, `OPENAI_API_KEY`, `OPENAI_IMAGE_BASE_URL`, or `PIXELTAMER_BACKEND`.
+
+The configuration-file signal is required for third-party providers because `doctor` may not see values loaded from Pixeltamer's own `.env`. Do not reject the image route solely because `doctor` reports no key when that config file is present. The actual generation command with `--json` remains the final check; report its failure without fabricating an image or path. Check only file readability and variable names; never print secret values.
 
 Typical skill locations are environment-specific, for example:
 
@@ -98,7 +101,7 @@ For Mermaid/SVG, specify exact relations, values, and geometry. For image-maker,
 
 ## Dispatch
 
-`pi-subagents` discovers agents from `.pi/agents/`. Confirm the selected agent is executable with `subagent({ action: "list", capabilities: true })`. For `image-maker`, complete the `pixeltamer` skill existence check above first; capability discovery alone is not proof that image generation is available. The real generation call with `--json` is the backend check.
+`pi-subagents` discovers agents from `.pi/agents/`. Confirm the selected Agent is executable with `subagent({ action: "list", capabilities: true })`. For `image-maker`, complete the `pixeltamer` skill and configuration-signal preflight above first; capability discovery alone is not proof that image generation is available. The real generation call with `--json` is the final backend check.
 
 Then dispatch the appropriate maker:
 
