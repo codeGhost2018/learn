@@ -49,3 +49,25 @@
 - README 保持“项目原始说明 → `FORK INFO` → 当前 Fork 修改总结 → `change.md` 引用”的顺序。
 - Fork 新增或修改内容先在 README 的 `FORK INFO` 后用中文做总结，再在 `change.md` 中按日期记录详细变化、测试结果和已知限制。
 - 后续 README 与 `change.md` 的 Fork 修改说明统一使用中文。
+
+## 2026-10-06
+
+### 教学视觉锚点
+
+- 将视觉锚点纳入每节课的教学计划：计划阶段必须明确学习者先看什么、视觉要帮助注意什么，以及选择图片、Mermaid、SVG 或文字的理由。
+- `image-maker` 成为概念整体模型的默认候选路线；它会在详细知识节点讲解前呈现。教学依赖 DAG 仍由 Mermaid 表达，但不再替代视觉锚点。
+- 放宽 `image-maker` 的适用范围：概念整体模型、系统概览、物理类比和视觉隐喻，即使场景不复杂，也可以使用图片作为教学入口。
+- 保留 Mermaid 和 SVG 在精确关系、位置、数值、角度和公式上的职责，避免用图片表达需要权威读取的细节。
+
+### Pixeltamer 前置检查
+
+- `image-maker` 和 `visualize` 不再运行 `pixeltamer doctor`。
+- 前置检查只确认 `pixeltamer` Skill 可读、Pixeltamer 配置文件可读且包含受支持的变量名；不读取或输出密钥值。
+- `image-maker` 不调用 Pixeltamer Bash dispatcher，而是直接调用 API backend helper 的 `--json` 接口。这样第三方 API 配置会由 API helper 从 `.env` 加载，避免 dispatcher 在加载 `.env` 前选择 backend。
+- 真实图片生成命令的 `--json` 结果仍是最终成功判断。项目 Agent 明确覆盖全局 Pixeltamer Skill 中的 doctor 前置步骤，以支持从 `.env` 加载第三方 API 配置。
+
+### 验证
+
+- 检查了项目 Skill、Agent、README 和变更记录中的 doctor 引用与规则一致性。
+- 检查了 Pixeltamer API backend 源码：它会自动读取当前目录、`~/.config/pixeltamer/.env` 等配置文件，并通过环境变量读取 API 配置。
+- 未执行真实图片生成；本次变更只调整 Skill/Agent 路由和前置检查规则。

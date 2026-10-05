@@ -38,7 +38,7 @@ git clone https://github.com/amosblomqvist/learn .pi
 - `svg-maker` 所需的 SVG 工具和本地渲染器
 - `image-maker` 所需的 `pixeltamer` skill
 
-`image-maker` 是条件能力。它必须先确认当前 Pi 环境中存在且能够读取 `pixeltamer` skill，并满足以下任一配置条件：`pixeltamer doctor` 报告可用 backend，或者 Pixeltamer 配置文件存在且包含受支持的配置项，例如 `OPENAI_IMAGE_API_KEY`、`OPENAI_API_KEY`、`OPENAI_IMAGE_BASE_URL` 或 `PIXELTAMER_BACKEND`。后者用于兼容第三方模型源，因为 `doctor` 可能看不到 Pixeltamer 自己从 `.env` 加载的配置。最终仍由真实生成命令的 `--json` 结果判断调用是否成功。不要读取、打印或提交配置中的密钥值。
+`image-maker` 是条件能力。它必须先确认当前 Pi 环境中存在且能够读取 `pixeltamer` skill，并且 Pixeltamer 配置文件可读且包含受支持的设置项，例如 `OPENAI_IMAGE_API_KEY`、`OPENAI_API_KEY`、`OPENAI_IMAGE_BASE_URL` 或 `PIXELTAMER_BACKEND`。项目不会运行 `pixeltamer doctor`，也不会经过 Pixeltamer Bash dispatcher；`image-maker` 会直接运行 Skill 自带的 API backend helper，由它从 `.env` 加载第三方 API 配置。真实生成命令的 `--json` 结果决定调用是否成功。不要读取、打印或提交配置中的密钥值。
 
 Pixeltamer 常见配置位置是：
 
@@ -63,9 +63,9 @@ $HOME/.config/pixeltamer/.env
 - 将 `mermaid-maker` 保持为 Mermaid 源码 Agent：用于依赖图、流程、状态机、树和其他小型关系结构，不负责生成 PNG。
 - 将 `svg-maker` 保持为精确图形 Agent：用于坐标、比例、角度、公式、数值和其他确定性几何内容。
 - 新增 `image-maker`：用于大型系统、复杂空间场景、三维结构、视觉隐喻和图片模型更适合表达的教学插图。
-- 将 `visualize` skill 升级为三路视觉路由：关系结构使用 Mermaid，精确几何使用 SVG，复杂空间场景使用图片生成模型。
-- 保留教学计划中的依赖 DAG 使用 Mermaid，因为它表达的是知识之间的依赖关系，不能由图片模型替代。
-- `image-maker` 只有在当前环境中检测到 `pixeltamer` skill，并且满足以下任一条件时才可使用：`pixeltamer doctor` 报告可用 backend，或 Pixeltamer 配置文件存在且含受支持配置项。最终通过真实生成命令的 `--json` 结果判断 backend，而不是只依赖 `pixeltamer doctor`。
+- 将 `visualize` skill 升级为三路视觉路由：教学计划必须先选择一个视觉锚点；概念整体模型优先评估图片生成，关系结构使用 Mermaid，精确几何使用 SVG。
+- 教学计划必须明确一个视觉锚点，并在详细节点教学前呈现；依赖 DAG 仍使用 Mermaid，但不再算作视觉锚点。图片生成是默认候选路线，只有在不增加理解、可能误导或无法使用时才改用 Mermaid、SVG 或文字，并说明原因。
+- `image-maker` 只有在当前环境中检测到可读取的 `pixeltamer` skill 和可读的 Pixeltamer 配置文件时才可使用。项目不运行 `pixeltamer doctor`，并直接调用 Pixeltamer API backend helper 从 `.env` 加载配置；最终通过生成命令的 `--json` 结果判断调用是否成功。
 - 图片生成结果必须被读取和人工检查后才能发布到 `viz/`。
 - 暂不增加独立的 `hybrid-visual-maker`；只有在真实课程反复需要“图片主体加精确标注”时，才考虑增加 annotated mode。
 - 新增 [`change.md`](change.md)，记录每次修改的日期、内容、测试结果和已知限制。
