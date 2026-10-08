@@ -25,44 +25,53 @@ Prefer this route for the lesson's opening visual anchor. The image can be simpl
 
 ## Required preflight
 
-The image route is available when the `pixeltamer` skill exists and a readable Pixeltamer configuration file exists, such as `$HOME/.config/pixeltamer/.env`, with at least one supported Pixeltamer setting such as `OPENAI_IMAGE_API_KEY`, `OPENAI_API_KEY`, `OPENAI_IMAGE_BASE_URL`, or `PIXELTAMER_BACKEND`.
+The image route is available when the `gpt-image-2-skill` skill exists and its CLI runtime is operational.
 
-**Do not run `pixeltamer doctor`.** Third-party API settings may be loaded from Pixeltamer's `.env` and are not necessarily visible to doctor. Check only that the skill and configuration file are readable and that supported variable names are present. Never read, print, or expose secret values.
+**Run the doctor check** to confirm the skill and its provider are ready:
 
-The actual generation command with `--json` is the final backend check: `ok: true` confirms availability; `ok: false` must be reported without fabricating an image or filename.
-
-The `pixeltamer` skill must be readable before generation. Read its relevant references and follow its backend, prompt, output, and verification instructions, except for its `pixeltamer doctor` prerequisite, which is intentionally disabled here. A project-level Agent definition alone is not enough.
-
-Typical skill and configuration locations include:
-
-```text
-$PI_AGENT_HOME/skills/pixeltamer/SKILL.md
-$HOME/.pi/agent/skills/pixeltamer/SKILL.md
-$HOME/.claude/skills/pixeltamer/SKILL.md
-$HOME/.config/pixeltamer/.env
+```bash
+node <skill-dir>/scripts/gpt_image_2_skill.cjs --json doctor
 ```
 
-Do not read, print, or expose secret values. Check only file readability and supported variable names.
+The doctor command checks runtime availability and provider authentication. A successful result (`ok: true`) confirms the backend is ready. A failure (`ok: false`) must be reported without fabricating an image or filename.
 
-If the `pixeltamer` skill or the readable configuration-file signal is absent, return an infrastructure failure and let the caller route to Mermaid, SVG, or prose.
+The `gpt-image-2-skill` skill must be readable before generation. Read its SKILL.md and follow its backend, prompt, output, and verification instructions. A project-level Agent definition alone is not enough.
+
+Typical skill locations include:
+
+```text
+$PI_AGENT_HOME/skills/gpt-image-2-skill/SKILL.md
+$HOME/.pi/agent/skills/gpt-image-2-skill/SKILL.md
+```
+
+Authentication is resolved automatically from (in priority order):
+- `OPENAI_API_KEY` environment variable
+- `~/.codex/auth.json` for Codex provider
+- Shared config at `$CODEX_HOME/gpt-image-2-skill/config.json`
+
+Never read, print, or expose secret values.
+
+If the `gpt-image-2-skill` skill is absent or the doctor check fails, return an infrastructure failure and let the caller route to Mermaid, SVG, or prose.
 
 ## Required workflow
 
 1. Reduce the brief to ONE visual teaching goal. Keep the must-have objects and relations; ignore decorative additions.
 2. Complete the preflight above before attempting generation.
-3. Read the `pixeltamer` skill's relevant references and follow its backend, prompt, output, and verification instructions, except for its `pixeltamer doctor` prerequisite, which is intentionally disabled here.
+3. Read the `gpt-image-2-skill` SKILL.md and follow its generation, output, and verification instructions.
 4. Build a prompt from the brief with these sections: intent, scene, subjects, spatial relations, viewpoint/composition, style, text constraints, and output constraints.
 5. Prefer no text or only a few short labels inside the generated image. Do not ask the model to render code, equations, tables, byte counts, or dense annotations.
 6. Generate a PNG in the project's `viz/` directory using a unique `viz-<slug>-<timestamp>.png` filename. Use a wide format such as 1536x1024 for lesson scenes unless the brief requires another ratio.
+
+   ```bash
+   node <skill-dir>/scripts/gpt_image_2_skill.cjs --json --json-events \
+     images generate --prompt "<your prompt>" \
+     --out <viz-dir>/viz-<slug>-<timestamp>.png \
+     --format png --size 1536x1024
+   ```
+
 7. Read the generated image and inspect it against the brief. Check the required objects, spatial relations, composition, legibility, cropping, artifacts, and possible teaching contradictions.
 8. If it fails, change one major dimension and regenerate. Do not claim success from a successful API exit alone.
 9. Return exactly one result block on success.
-
-### Configuration boundary
-
-The `pixeltamer` skill's general instructions mention `pixeltamer doctor` as an install check. This Agent intentionally skips that check because this project uses third-party API settings from Pixeltamer's `.env`; the project's configuration-file check plus the real generation command are authoritative here.
-
-The `pixeltamer` skill owns prompt and image-generation behavior. Locate its installed skill directory, then invoke its API backend helper directly with `python3 <skill-dir>/scripts/pixeltamer_api.py generate ... --json`. This helper loads Pixeltamer's documented `.env` files itself. Do not invoke the `pixeltamer` Bash dispatcher or `pixeltamer doctor`: the dispatcher chooses a backend before the API helper loads `.env`, so third-party API settings may otherwise be missed. Branch on the helper's structured JSON result; `ok: true` confirms the request succeeded, while `ok: false` is an infrastructure or request failure. Never expose API keys in prompts, files, or the result.
 
 ## Verification boundary
 

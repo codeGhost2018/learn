@@ -71,3 +71,20 @@
 - 检查了项目 Skill、Agent、README 和变更记录中的 doctor 引用与规则一致性。
 - 检查了 Pixeltamer API backend 源码：它会自动读取当前目录、`~/.config/pixeltamer/.env` 等配置文件，并通过环境变量读取 API 配置。
 - 未执行真实图片生成；本次变更只调整 Skill/Agent 路由和前置检查规则。
+
+## 2026-10-08
+
+### 图片生成后端迁移
+
+- 将 `image-maker` 的图片生成后端从 `pixeltamer` 迁移到 `gpt-image-2-skill`。
+- 更新 `agents/image-maker.md`：前置检查改为运行 `gpt-image-2-skill` 的 `doctor` 命令；生成命令改为 `node <skill-dir>/scripts/gpt_image_2_skill.cjs --json images generate ...`；移除 Pixeltamer 特有的 dispatcher/helper 区分和 `.env` 加载逻辑。
+- 更新 `skills/visualize/SKILL.md`：`image-maker` 前置检查和调度说明改为引用 `gpt-image-2-skill`。
+- 更新 `README.md`：依赖说明和 Fork 修改总结中的 `pixeltamer` 引用改为 `gpt-image-2-skill`。
+- 认证方式从 Pixeltamer 的 `.env` 配置改为 `gpt-image-2-skill` 的自动解析：`OPENAI_API_KEY` 环境变量、`~/.codex/auth.json` 或共享配置。
+- 保持相同的工作流程结构、输出契约和验证边界；教学效果不变。
+
+### 已知差异
+
+- `gpt-image-2-skill` 的 `doctor` 命令可以正常运行，不再需要像 Pixeltamer 那样跳过 doctor 检查。
+- 移除了 Pixeltamer 的 Bash dispatcher 与 API helper 区分逻辑；`gpt-image-2-skill` 的 Node wrapper 统一处理所有调用。
+- 未执行真实图片生成测试；需要在实际教学场景中验证生图效果。

@@ -85,19 +85,24 @@ If a concept has both a conceptual scene and a few exact annotations, use `image
 
 ### `image-maker` preflight
 
-The image route is available when the `pixeltamer` skill is readable and a Pixeltamer configuration file is readable. Do **not** run `pixeltamer doctor` as a prerequisite: third-party API settings may be loaded from Pixeltamer's `.env` and are not necessarily visible to doctor.
+The image route is available when the `gpt-image-2-skill` skill is readable and its CLI runtime is operational.
 
-Check only the configuration file's readability and whether it contains at least one supported setting name, such as `OPENAI_IMAGE_API_KEY`, `OPENAI_API_KEY`, `OPENAI_IMAGE_BASE_URL`, or `PIXELTAMER_BACKEND`. Never print or expose values. The actual generation command with `--json` is the only backend success check; report its failure without fabricating an image or path.
+Run the doctor check to confirm the skill and its provider are ready:
+
+```bash
+node <skill-dir>/scripts/gpt_image_2_skill.cjs --json doctor
+```
+
+A successful result (`ok: true`) confirms the backend is ready. A failure (`ok: false`) must be reported without fabricating an image or path. Never print or expose secret values.
 
 Typical skill locations are environment-specific, for example:
 
 ```text
-$PI_AGENT_HOME/skills/pixeltamer/SKILL.md
-$HOME/.pi/agent/skills/pixeltamer/SKILL.md
-$HOME/.claude/skills/pixeltamer/SKILL.md
+$PI_AGENT_HOME/skills/gpt-image-2-skill/SKILL.md
+$HOME/.pi/agent/skills/gpt-image-2-skill/SKILL.md
 ```
 
-Use the path provided by the current environment. Do not assume that a skill available in one Pi installation is available in another.
+Authentication is resolved automatically from `OPENAI_API_KEY`, `~/.codex/auth.json`, or shared config. Use the path provided by the current environment. Do not assume that a skill available in one Pi installation is available in another.
 
 ## Briefing any maker
 
@@ -114,7 +119,7 @@ For Mermaid/SVG, specify exact relations, values, and geometry. For image-maker,
 
 ## Dispatch
 
-`pi-subagents` discovers agents from `.pi/agents/`. Confirm the selected Agent is executable with `subagent({ action: "list", capabilities: true })`. For `image-maker`, complete the `pixeltamer` Skill and configuration-file preflight above first; capability discovery alone is not proof that image generation is available. The Agent must invoke the Pixeltamer API backend helper directly with `--json`, not `pixeltamer doctor` or the Bash dispatcher, so the helper can load third-party `.env` settings. The real generation result is the final backend check.
+`pi-subagents` discovers agents from `.pi/agents/`. Confirm the selected Agent is executable with `subagent({ action: "list", capabilities: true })`. For `image-maker`, complete the `gpt-image-2-skill` doctor preflight above first; capability discovery alone is not proof that image generation is available. The Agent must invoke the gpt-image-2-skill CLI with `--json` to generate images; the real generation result is the final backend check.
 
 Then dispatch the appropriate maker:
 
