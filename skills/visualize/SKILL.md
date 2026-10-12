@@ -11,14 +11,14 @@ The teaching plan's dependency map remains Mermaid because it expresses the logi
 
 ## Visual anchor first
 
-During lesson planning, always ask: "What should the learner be able to see before reading the explanation?" Prefer `image-maker` for the anchor when a generated scene, system overview, physical analogy, layered environment, or visual narrative can make the concept easier to understand. This is a default evaluation, not a command to generate an image for every topic.
+During lesson planning, always ask: "What should the learner be able to see before reading the explanation?" Then choose the maker by the kind of truth the learner must read from the visual — not by treating any one maker as the default.
 
 Use exactly one anchor route and record the reason:
 
-- `image-maker`: default for the conceptual overview when the learner benefits from seeing the whole system, scene, scale, layers, objects, or transformation. It may be simple; it does not need to satisfy the old "large complex scene" threshold.
-- `mermaid-maker`: use for the anchor when the concept itself is primarily a small, exact set of relationships and an illustrative scene would obscure the meaning.
-- `svg-maker`: use when the learner must see exact positions, proportions, angles, values, or formulas.
-- no generated visual: allowed only when a visual would not add understanding or would be misleading; explain the reason and use a concrete prose example instead.
+- `mermaid-maker`: the concept is primarily a small, exact set of relationships — dependency graphs, flows, state machines, sequences, trees. The connections are the content.
+- `svg-maker`: the learner must see exact positions, proportions, angles, values, or formulas — coordinate geometry, vectors, function plots, memory maps, physical layouts.
+- `image-maker`: the learner benefits from a conceptual scene, system overview, physical analogy, layered environment, or visual metaphor — where spatial intuition or visual narrative makes the idea easier to grasp than words or a diagram alone.
+- no generated visual: a visual would not add understanding or would be misleading; explain the reason and use a concrete prose example instead.
 
 The anchor must appear before the detailed teaching nodes. Add one or two sentences telling the learner what to notice. Do not let the required Mermaid teaching DAG silently replace this decision.
 
@@ -50,7 +50,7 @@ It hand-authors SVG, renders a preview, looks at it, iterates, and publishes a v
 
 ### `image-maker`: conceptual scenes and system models
 
-Use it as the default anchor candidate when the learner needs an overall mental model, even when the scene is not especially large or complex:
+Use it when the learner benefits from a conceptual scene, system overview, physical analogy, or visual metaphor:
 
 - large systems with many objects and layers;
 - multi-stage real-world or technical scenes;
@@ -58,7 +58,7 @@ Use it as the default anchor candidate when the learner needs an overall mental 
 - browser/network/cloud/computer overviews;
 - concepts such as caching, recursion, concurrency, virtual memory, or garbage collection when spatial intuition is the goal.
 
-Use it when the learner benefits from seeing the whole system, scene, transformation, layers, scale, environment, or visual metaphor. A small code diagram may still be clearer for exact relationships, but do not reject an image merely because Mermaid can technically represent the topic. The brief must identify the required objects and relations, and the image must remain a faithful intuition rather than an authoritative source for exact topology or numbers.
+Do not use it for exact formulas, dense labels, data tables, byte layouts, or diagrams where every arrow and number must be authoritative. Those belong to Mermaid or SVG.
 
 Do not use it for exact formulas, dense labels, data tables, byte layouts, or diagrams where every arrow and number must be authoritative. Those belong to Mermaid or SVG.
 
@@ -66,20 +66,22 @@ Do not use it for exact formulas, dense labels, data tables, byte layouts, or di
 ## Routing rules
 
 ```text
-First ask: would a conceptual scene or visual model make the lesson easier to understand?
-  yes -> image-maker is the default anchor candidate
+What kind of truth must the learner read from the visual?
 
-If the concept must be read as exact relationships rather than as a scene:
-  yes -> mermaid-maker
+  Relationships (nodes, edges, flows, states, sequences)
+    -> mermaid-maker
 
-If the concept must be read as exact position, scale, angle, value, or formula:
-  yes -> svg-maker
+  Exact positions, geometry, values, formulas
+    -> svg-maker
 
-If a generated visual would add no understanding or would mislead:
-  explain why -> use prose or a precise alternative
+  Conceptual scene, system overview, visual metaphor, spatial intuition
+    -> image-maker
+
+  A visual would add no understanding or would mislead
+    -> explain why, use prose or a precise alternative
 ```
 
-The anchor decision comes before the detailed representation decision. An image can introduce the intuition, while a later Mermaid or SVG figure supplies exact structure. Do not generate multiple visuals for one anchor goal.
+The three makers are peers — none is the default. Choose by the content type, not by falling through to image-maker. The anchor decision comes before the detailed representation decision. Do not generate multiple visuals for one anchor goal.
 
 If a concept has both a conceptual scene and a few exact annotations, use `image-maker` for the anchor when the scene itself is the teaching goal. Keep annotations short and put authoritative values or relationships in the accompanying Mermaid/SVG or prose. Do not introduce a separate hybrid agent in this version; add a later annotated mode only if real lessons repeatedly require programmatic labels over generated scenes.
 

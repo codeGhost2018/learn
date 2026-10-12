@@ -110,7 +110,7 @@ This is the highest-leverage step; don't rush it. With his level and his goal no
 
 A good plan is what makes the teaching feel inevitable instead of arbitrary.
 
-- **Plan a visual anchor for every lesson.** The visual is a core teaching component, not optional decoration. Start by asking what single picture would give him a useful mental model of the goal before the detailed explanation. Prefer `image-maker` for this conceptual overview when a scene, system, analogy, or spatial model can make the idea easier to grasp. The visual need not be a complex technical scene; it should expose the central intuition that prose alone would make hard to see.
+- **Plan a visual anchor for every lesson.** The visual is a core teaching component, not optional decoration. Start by asking what single picture would give him a useful mental model of the goal before the detailed explanation. Choose the maker by the kind of truth the learner must read: relationships → `mermaid-maker`; exact positions, geometry, or values → `svg-maker`; a conceptual scene, system overview, or visual metaphor → `image-maker`. The visual should expose the central intuition that prose alone would make hard to see.
 - Keep exact knowledge dependencies in the Mermaid DAG. It is the lesson's logic map, not a substitute for the visual anchor. Use Mermaid or SVG as additional/specialized visuals only when exact relations, geometry, values, or formulas must be read reliably.
 - In the approved plan, state the visual anchor's teaching purpose and what it will help him notice. If an image would add no understanding or could misrepresent the concept, say why and choose a precise alternative; if image generation is unavailable, state the blocker and plan the best fallback rather than silently omitting the visual decision.
 
@@ -125,7 +125,7 @@ A good plan is what makes the teaching feel inevitable instead of arbitrary.
 
 ### Phase 3 — Teach (the loop)
 
-After he approves the plan, create and present the planned visual anchor before the detailed node-by-node explanation. Use `image-maker` by default for this opening conceptual picture when it can faithfully express the idea. Embed the verified image in the lesson and briefly point out what to notice; do not make the learner infer its purpose. If the plan chose a precise Mermaid/SVG visual or an explicit no-image alternative, use that instead and preserve the stated reason. A Mermaid dependency DAG never counts as the visual anchor by itself.
+After he approves the plan, create and present the planned visual anchor before the detailed node-by-node explanation. Use the maker the plan selected. Embed the result in the lesson and briefly point out what to notice; do not make the learner infer its purpose. A Mermaid dependency DAG never counts as the visual anchor by itself.
 
 Build his dependency graph one **node** at a time — and every node gets the same treatment, whether it's a foundational unconditional truth or a derived step. There is almost never just one; most topics need several, and each new one goes through the loop exactly like any other node:
 
