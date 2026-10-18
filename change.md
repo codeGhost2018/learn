@@ -88,3 +88,39 @@
 - `gpt-image-2-skill` 的 `doctor` 命令可以正常运行，不再需要像 Pixeltamer 那样跳过 doctor 检查。
 - 移除了 Pixeltamer 的 Bash dispatcher 与 API helper 区分逻辑；`gpt-image-2-skill` 的 Node wrapper 统一处理所有调用。
 - 未执行真实图片生成测试；需要在实际教学场景中验证生图效果。
+
+## 2026-10-17
+
+### SVG 子 Agent 工具修复
+
+- 安装 Homebrew `librsvg`，确认 `rsvg-convert 2.63.3` 可将 SVG 渲染为 PNG；不安装 ImageMagick。
+- 在 `agents/svg-maker.md` 增加 `subagentOnlyExtensions`，显式加载 `tools/svg_tools.ts`，保留严格工具名单并采用 `systemPromptMode` 字段。
+- 移除项目扩展入口对 `globalThis.__pi_interactive_subagents.registerToolExtension` 的依赖。入口保持无工具注册，避免把子 Agent 绘图能力暴露给主会话。
+- SVG provider 改用 Pi 提供的 schema 和 `defineTool`；不再依赖旧的 `@sinclair/typebox` 运行时。
+- 将 SVG 源文件状态移入扩展工厂，临时目录使用唯一标识；避免多个 SDK 子会话共用进程时互相覆盖源文件。
+- 发布目录改用工具上下文的 `cwd`，文件名增加随机后缀，减少同毫秒发布碰撞；渲染失败明确返回 `isError`。
+- 清理依赖清单中原作者电脑上的 Pi 绝对路径，重新生成锁文件，增加 Node 类型依赖及 SVG 类型检查配置；本地 host 类型链接仅存在于忽略的 `node_modules` 中。
+
+### 验证
+
+- 无模型测试 4 项通过：工具注册与主会话无工具暴露；写入、精确编辑、PNG 预览及发布；同进程会话隔离；缺少源文件、重复匹配和错误 SVG 的失败处理。
+- SVG 的严格 TypeScript 编译检查通过。
+- 已确认 `pi-subagents` 将相对 provider 路径解析到正确文件。
+- 真实 `svg-maker` 运行已成功调用 `write_svg`、`edit_svg`、`render_svg` 和 `read`。但当前 `qoder/Ultimate` 会话中的预览附件和直接读取图片均未向模型提供可见像素；子 Agent 如实停止，没有发布未经目视检查的 PNG。此结果确认工具加载修复，不代表完整视觉验收通过。
+- 在写入和预览的模型可见文本中补充源文件及 PNG 路径，避免仅放在 `details` 中而导致模型无法定位；补充读取路径后仍不可见时停止的规则与测试。
+- 经用户批准，仅为本次视觉验收切换到 `moacode-claude/claude-opus-5`。该会话实际看见原预览、重新渲染预览及发布 PNG，确认中文字、直角标记、边标签与布局正确；完整渲染/查看/发布链路通过。
+- 发布测试图为 `viz/viz-svg-tools-smoke-test-1792289775506-1e8f3b00.png`（相对学习项目根目录），1280×800 PNG；与第一轮原预览的文件字节完全一致。没有重新设计图形、改变默认模型或替换课程图片。
+- `qoder/Ultimate` 的图片不可见问题仍未修复；未来视觉验收应使用实际可见图片的模型或明确停止，不能仅凭模型配置声明支持图片就认定可以目视检查。
+
+### 范围与限制
+
+- 本次不替换已经生成的微积分课程插图，也不修改图片生成或 Mermaid 源码 Agent。
+- 旧版 Mermaid PNG provider 仍保留，但没有迁移或执行其浏览器渲染测试。
+- Homebrew 安装时同步安装或升级了 `librsvg` 的绘图、字体等依赖。
+
+### README 安装说明补充
+
+- 在 README 的安装章节增加独立的 SVG 渲染器安装步骤，明确 `rsvg-convert` 由 `librsvg` 提供，不随 Pi 或仓库克隆自动安装。
+- 提供 macOS 的 `brew install librsvg` 命令、`command -v rsvg-convert` 与版本检查，以及 PATH 排查提示。
+- 明确无需同时安装 ImageMagick，仅使用 Mermaid 源码 Agent 时无需此依赖。
+- 文档通过 Markdown 检查与 `git diff --check`；本次不执行 Git 提交。

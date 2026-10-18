@@ -7,20 +7,18 @@
  *   render_svg  — render whatever is in the file → PNG, returned inline; with
  *                 `save_as`, also publish it into <cwd>/viz
  *
- * Bundled inside the visual-tools extension and exposed to subagents via the
- * interactive-subagents `registerToolExtension` hook (see ../index.ts). Loaded
- * by the spawned child pi process for any subagent whose `tools:` frontmatter
- * includes these names (currently just svg-maker). All three names map to this
- * one file.
+ * Loaded explicitly by svg-maker's `subagentOnlyExtensions`. The agent's
+ * `tools` list is a strict allowlist, not an extension loader. The project
+ * entry point deliberately does not expose these tools to the main session.
  *
  * Rendering shells out to rsvg-convert (librsvg — good system-font handling),
  * falling back to ImageMagick's `magick` if rsvg-convert is absent. Both are
- * system binaries; no node render deps. Module-level session state persists
- * across this child process's tool calls, isolated from any parallel maker.
+ * system binaries; no node render deps. State is local to each extension
+ * factory, so separate SDK child sessions do not share a source file.
  */
 
-import type { ExtensionAPI } from "@earendil-works/pi-coding-agent"
-import { Type } from "@sinclair/typebox"
+import { defineTool, type ExtensionAPI } from "@earendil-works/pi-coding-agent"
+import { Type } from "@earendil-works/pi-ai"
 import {
   applyEdit,
   existsSync,
@@ -41,12 +39,10 @@ const RENDER_TIMEOUT_MS = 60_000
 
 type RenderDetails = { ok: boolean; path: string; filename?: string }
 
-let session: Session | null = null
-
 /** Render an SVG file to PNG via rsvg-convert, falling back to magick. */
 async function renderSvg(svgPath: string, outPath: string, workDir: string) {
   // rsvg-convert renders at the SVG's intrinsic size; -z 2 doubles it for crispness.
-  let res = await run("rsvg-convert", ["-z", "2", svgPath, "-o", outPath], {
+  const res = await run("rsvg-convert", ["-z", "2", svgPath, "-o", outPath], {
     cwd: workDir,
     timeoutMs: RENDER_TIMEOUT_MS,
   })
@@ -61,8 +57,11 @@ async function renderSvg(svgPath: string, outPath: string, workDir: string) {
 }
 
 export default function svgToolsExtension(pi: ExtensionAPI) {
+  let session: Session | null = null
+  pi.on("session_start", () => { session = null })
+
   // ── write_svg ──────────────────────────────────────────────────────────────
-  pi.registerTool({
+  pi.registerTool(defineTool({
     name: "write_svg",
     label: "Write SVG",
     description:
@@ -80,19 +79,19 @@ export default function svgToolsExtension(pi: ExtensionAPI) {
       const source = (params.source ?? "").trim()
       if (!source) throw new Error("`write_svg` requires a non-empty `source`.")
       if (!source.includes("<svg")) throw new Error("`write_svg`: source must be a complete <svg>…</svg> document.")
-      session = writeBody(GROUP, BODY_FILE, source)
+      session = writeBody(GROUP, BODY_FILE, source, session)
       const lines = source.split("\n").length
       return {
         content: [
-          { type: "text", text: `Wrote ${lines}-line SVG source.\nCall render_svg to render it, or edit_svg to tweak it.` },
+          { type: "text", text: `Wrote ${lines}-line SVG source.\nsource_path: ${session.bodyPath}\nCall render_svg to render it, or edit_svg to tweak it.` },
         ],
         details: { ok: true, path: session.bodyPath, lines },
       }
     },
-  })
+  }))
 
   // ── edit_svg ───────────────────────────────────────────────────────────────
-  pi.registerTool({
+  pi.registerTool(defineTool({
     name: "edit_svg",
     label: "Edit SVG",
     description:
@@ -119,10 +118,10 @@ export default function svgToolsExtension(pi: ExtensionAPI) {
         details: { ok: true, path: session.bodyPath },
       }
     },
-  })
+  }))
 
   // ── render_svg ─────────────────────────────────────────────────────────────
-  pi.registerTool({
+  pi.registerTool(defineTool({
     name: "render_svg",
     label: "Render SVG",
     description:
@@ -144,7 +143,7 @@ export default function svgToolsExtension(pi: ExtensionAPI) {
         }),
       ),
     }),
-    async execute(_id, params) {
+    async execute(_id, params, _signal, _onUpdate, ctx) {
       if (!session || !existsSync(session.bodyPath)) {
         throw new Error("render_svg: no source yet — call write_svg first.")
       }
@@ -164,6 +163,7 @@ export default function svgToolsExtension(pi: ExtensionAPI) {
               text: `${note}SVG render FAILED — no image produced (tried rsvg-convert then magick). Fix the source with edit_svg and call render_svg again.\n\nError:\n${detail}`,
             },
           ],
+          isError: true,
           details: { ok: false, path: "" } as RenderDetails,
         }
       }
@@ -172,7 +172,7 @@ export default function svgToolsExtension(pi: ExtensionAPI) {
       const content: Array<{ type: "text"; text: string } | { type: "image"; data: string; mimeType: string }> = []
 
       if (params.save_as) {
-        const { filename, path } = publish(outPath, String(params.save_as))
+        const { filename, path } = publish(outPath, String(params.save_as), ctx.cwd)
         content.push({
           type: "text",
           text: `Published to viz/.\nfilename: ${filename}\npath: ${path}\n\nLOOK at the picture below to confirm the geometry is correct before returning it.`,
@@ -183,10 +183,10 @@ export default function svgToolsExtension(pi: ExtensionAPI) {
 
       content.push({
         type: "text",
-        text: "Preview render (not yet saved). LOOK: are coordinates, angles, directions, and proportions correct? Labels clear and unclipped? Fix with edit_svg, or re-render with `save_as` to publish.",
+        text: `Preview render (not yet saved).\npath: ${outPath}\nLOOK: are coordinates, angles, directions, and proportions correct? Labels clear and unclipped? If the inline image is unavailable, read this path; if its pixels are still inaccessible, stop without publishing. Fix with edit_svg, or re-render with \`save_as\` to publish.`,
       })
       content.push({ type: "image", data, mimeType: "image/png" })
       return { content, details: { ok: true, path: outPath } as RenderDetails }
     },
-  })
+  }))
 }

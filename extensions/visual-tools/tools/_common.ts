@@ -9,6 +9,7 @@
  */
 
 import { spawn } from "node:child_process"
+import { randomUUID } from "node:crypto"
 import { tmpdir } from "node:os"
 import { basename, dirname, join } from "node:path"
 import { copyFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs"
@@ -71,20 +72,20 @@ export function run(
   })
 }
 
-/** Per-session managed source file, one per child pi process (pid-keyed). */
+/** Managed source file belonging to one extension session. */
 export interface Session {
   workDir: string
   bodyPath: string
 }
 
-/** Per-session work dir under the OS temp dir, keyed by pid + a group name. */
+/** SDK child sessions may share a process, so a PID alone is not unique. */
 export function sessionDir(group: string): string {
-  return join(STAGING_ROOT, `${group}-${process.pid}`)
+  return join(STAGING_ROOT, `${group}-${process.pid}-${randomUUID()}`)
 }
 
-/** Write the full source to the managed file, creating the session work dir. */
-export function writeBody(group: string, bodyFileName: string, source: string): Session {
-  const workDir = sessionDir(group)
+/** Write or replace a source while preserving this session's managed path. */
+export function writeBody(group: string, bodyFileName: string, source: string, existing?: Session | null): Session {
+  const workDir = existing?.workDir ?? sessionDir(group)
   mkdirSync(workDir, { recursive: true })
   const bodyPath = join(workDir, bodyFileName)
   writeFileSync(bodyPath, source, "utf8")
@@ -131,15 +132,15 @@ export function snippetAround(content: string, index: number, contextLines = 3):
 }
 
 /** Copy a rendered PNG into <cwd>/viz with a unique, slugified name. */
-export function publish(pngPath: string, slug: string): { filename: string; path: string } {
-  const filesDir = join(process.cwd(), FILES_DIRNAME)
+export function publish(pngPath: string, slug: string, cwd = process.cwd()): { filename: string; path: string } {
+  const filesDir = join(cwd, FILES_DIRNAME)
   mkdirSync(filesDir, { recursive: true })
   const clean =
     slug
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, "-")
       .replace(/^-+|-+$/g, "") || "viz"
-  const filename = `viz-${clean}-${Date.now()}.png`
+  const filename = `viz-${clean}-${Date.now()}-${randomUUID().slice(0, 8)}.png`
   const dest = join(filesDir, filename)
   copyFileSync(pngPath, dest)
   return { filename, path: dest }

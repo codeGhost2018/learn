@@ -1,18 +1,22 @@
 {
   "name": "@learn/visual-tools",
   "version": "0.1.0",
-  "description": "visual-tools: custom subagent tools (write/edit/render for Mermaid and SVG) for the interactive-subagents extension.",
+  "description": "Child-only visual tools loaded explicitly by pi-subagents.",
   "type": "module",
   "private": true,
+  "scripts": {
+    "test": "node --test tests/svg-tools.test.mjs"
+  },
   "dependencies": {
     "@mermaid-js/mermaid-cli": "^11.4.2"
   },
   "devDependencies": {
-    "@earendil-works/pi-coding-agent": "file:/Users/amos/.nvm/versions/node/v24.14.0/lib/node_modules/@earendil-works/pi-coding-agent",
+    "@types/node": "^24.0.0",
     "@sinclair/typebox": "^0.34.0",
     "typescript": "^5.5.0"
   },
   "peerDependencies": {
+    "@earendil-works/pi-ai": "*",
     "@earendil-works/pi-coding-agent": "*"
   }
 }
